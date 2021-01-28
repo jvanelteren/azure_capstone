@@ -29,9 +29,8 @@ def run(data):
         # Pick out the text property of the JSON request.
         # This expects a request in the form of {"text": "some text to score for sentiment"}
         data = json.loads(data)
-        test_x = data
         # test_x = pipe.transform(data)
-        prediction = predict(test_x)
+        prediction = predict(data)
         #Return prediction
         return prediction
     except Exception as e:

@@ -70,8 +70,6 @@ class DFColumnTransformer(ColumnTransformer):
 def get_pipeline():
     # in essence this splits the input into a categorical pipeline and a numeric pipeline
     # merged with a ColumnTransformer
-    # on top a model is plugged (within OutlierExtractor if remove_outliers = True)
-    # this works very nicely!
 
     cat_steps = []
     cat_steps.append(('impute_cat', DFSimpleImputer(strategy='most_frequent')))
@@ -91,7 +89,7 @@ def get_pipeline():
     preprocessor_steps = [('col_trans', col_trans)]
     preprocessor = Pipeline(steps=preprocessor_steps)
 
-    return preprocessor    
+    return preprocessor
 
 #%%
 pipe = get_pipeline()
@@ -101,8 +99,6 @@ param = {}
 
 #%%
 run = Run.get_context()
-
-
 
 def main():
     # Add arguments to script
@@ -120,13 +116,10 @@ def main():
     parser.add_argument('--n_estimators', type=float, default=2200)
 
     # args = parser.parse_args()
-
     param = vars(parser.parse_args())
     res = xgb.cv(param,xgb.DMatrix(train_x, train_y), num_boost_round =200, early_stopping_rounds = 5, nfold=5,seed=112)
-    # xgb.cv(param,xgb.DMatrix(train_x, train_y), num_boost_round =200, early_stopping_rounds = 5, nfold=5,seed=112)
 
     os.makedirs('outputs', exist_ok=True)
-    # joblib.dump(model, 'outputs/model.joblib')
     joblib.dump(pipe, 'outputs/preprocess.joblib')
     joblib.dump(param, 'outputs/param.joblib')
     run.log("rmse", res.loc[res.index[-1],'test-rmse-mean'])
@@ -134,4 +127,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-# %%
