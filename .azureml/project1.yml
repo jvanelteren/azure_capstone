@@ -1,0 +1,14 @@
+name: project1
+channels:
+    - defaults
+dependencies:
+    - python=3.6.2
+    - scikit-learn
+    - pandas
+    - numpy
+    - joblib
+    - pip
+    - pip:
+        - azureml-sdk
+        - xgboost
+        - azureml-defaults
