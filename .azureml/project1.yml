@@ -12,3 +12,4 @@ dependencies:
         - azureml-sdk
         - xgboost
         - azureml-defaults
+        - azureml.automl.runtime
