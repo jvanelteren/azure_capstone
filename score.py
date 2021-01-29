@@ -3,6 +3,7 @@ import os
 import json
 import time
 import joblib
+import pandas as pd
 import packaging
 # import azureml.train.automl
 import azureml.automl.runtime
@@ -33,15 +34,18 @@ def predict(data):
     # Tokenize text
     preds = model.predict(data)
     # Decode sentiment
-    return {"predictions": preds, "elapsed_time": time.time()-start_at}  
+    return {"predictions": preds.tolist(), "elapsed_time": time.time()-start_at}  
 
 
 # Handle requests to the service
 def run(data):
+    print('new request')
     try:
         # Pick out the text property of the JSON request.
         # This expects a request in the form of {"text": "some text to score for sentiment"}
         data = json.loads(data)
+        data = pd.read_json(data)
+
         # test_x = pipe.transform(data)
         prediction = predict(data)
         #Return prediction
