@@ -1,27 +1,31 @@
-# Beat Kaggle housing submission with Azure
+# Kaggle housing project with Azure
 
-For this capstone project, I wanted to find out how good hyperdrive and AutoML are really performing. As a benchmark I've taken the Kaggle housing competition, a competition where I participated myself and spend quite some time. The goal of the competition is to predict the price of a house given certain features. The benchmark is my personal submission, which scores top 3%. If either the AutoML or Hyperdrive model is outperforming that, it indicated Azure is a very good platform for good machine learning models.
+For this capstone project, I wanted to find out how good hyperdrive and AutoML are performing. As a benchmark I've taken the [https://www.kaggle.com/c/house-prices-advanced-regression-techniques/overview](Kaggle housing competition), a competition where I participated myself and spend quite some time. The goal of the competition is to predict the price of a house given certain features. The benchmark is my personal submission (0.117), which scores top 3%. If either the AutoML or Hyperdrive model is outperforming that, it indicated Azure is a very good platform for machine learning models.
 
 ## Project Set Up and Installation
-Since I wanted a level playing field between myself and Azure, I decided to take the dataset after feature engineering & selection as input for Azure. This because feature engineering is a critical step in the ML process and I was pretty sure Azure could not come up with a good score without it. It could be an interesting extension of the project to use the Kaggle dataset and submit this to AutoML.
+I decided to perform 4 experiments:
+(1) AutoML on the original kaggle dataset. The target in the dataset was log transformed, since that was the strategy I used in the competition as well. 
+Additionally I prepared a more elaborate dataset where additional feature engineering & selection was applied, which I used for my best score in the competition. This because feature engineering is a critical step in the ML process and I was pretty sure Azure could not come up with a good score without it. This dataset was run with AutoML (2), two XGBoost hyperdrive experiments: one with a randomsampling bandit policy (3) and one with bayesian sampling without a policy (4)
 
 ## Dataset
-The dataset was prepared by me by running the feature engineering notebook in my competition repo. It generated a [CSV file](https://raw.githubusercontent.com/jvanelteren/housing/master/datasets/housing_after_preprocessing.csv). This CSV file was then imported using the Azure Python SDK (udacity-project.ipynb). The dataset was split in a train dataset including the variable of interest y and a test dataset where the target variable was not present.
+As stated, I generated two datasets for training. The original dataset with only a log transform was stored as a [csv file at github](https://raw.githubusercontent.com/jvanelteren/housing/master/datasets/original_kaggle_y_log.csv)The more elaborate dataset was prepared by me by running the feature engineering notebook in my competition repo. It generated a [CSV file](https://raw.githubusercontent.com/jvanelteren/housing/master/datasets/housing_after_preprocessing.csv). This CSV file was then imported using the Azure Python SDK (udacity-project.ipynb). During training with hyperdrive, the dataset was split in a train dataset including the variable of interest y and a test dataset where the target variable was not present.
+Note that the two datasets have same amount of rows and the target for each house is identical.
 
 ### Overview
 I've split the main steps into separate notebooks
 1) train_models.ipynb registers the dataset and trains automl and hyperdrive models
-2) register_model.ipynb has the overview of the model scores and registers a model in the workspace
+2) register_model.ipynb inspects the overview of the model scores and registers the best performing model in the workspace
 3) deploy_test_endpoint deploys the best scoring model and tests it's endpoint
 
 ### Task
-As discussed, this dataset is already enriched by all kinds of feature engineering, e.g. combining existing features into sums, transforming features into ordinal variables, taking log transforms etc. In addition a custom Boruta algorithm was executed to take a subset of features. Note: for the AutoML function, both of these steps were not necessary since Azure does it itself. But I wanted to use the same dataset for both Hyperdrive and AutoML. No scaling of features did take place yet.
+As discussed, the more advanced dataset is already enriched by all kinds of feature engineering, e.g. combining existing features into sums, transforming features into ordinal variables, taking log transforms etc. In addition a custom Boruta algorithm was executed to take a subset of features. No scaling of features did take place yet.
+The task of the algorithm is regression: to predict the housing price, which is denoted as variably 'y' in the datasets.
 
 ### Access
-The train CSV file was converted into a TabularDataset and registered in the workspace.
+The csv files are publicly accessable. The train CSV file was converted into a TabularDataset and registered in the workspace (train_models.ipynb)
 
 ## Automated ML
-The automl settings used were:
+As denoted, two AutoML runs where executed, with identical settings on two datasets. The AutoML settings used were:
 - experiment_timeout_minutes=60 --> run the experiment for 1 hour
 - enable_onnx_compatible_models=True --> to potentially deploy an onnx model at a later stage, e.g. for deployment on a different platform
 - task='regression' --> this is a regression tast
@@ -32,12 +36,14 @@ The automl settings used were:
 - n_cross_validations=5 --> cross validation was used for both hyperdrive as automl to set an equal playing field for both experiments
 
 ### Results
-AutoML scored a RSME of 0.117. Using a voting ensemble. This was more or less expected, since as a rule of thumb an ensemble of models gives a slight improvement in score. It could be further improved by e.g. getting more data, additional feature engineering (although this dataset is already pretty much engineered out) and further finetuning the model. An other alternative is to try deep learning, but I noticed Azure doesn't offer that option for regression.
-
-*TODO* Remeber to provide screenshots of the `RunDetails` widget as well as a screenshot of the best model trained with it's parameters.
+AutoML scored a RSME of 0.1167 on the engineered dataset and 0.1273 on the raw dataset, both using a voting ensemble. This was more or less expected, since as a rule of thumb an ensemble of models gives a slight improvement in score. It could be further improved by e.g. getting more data, additional feature engineering (although one of the datasets is already pretty much engineered out) and further finetuning the model. An other alternative is to try deep learning, but I noticed Azure doesn't offer that option for regression.
+Screenshot of rundetails widget. It shows that the best model is found at the last run, which is where the ensembling takes place.
+![image](screenshots\01_run_details_automl.PNG)
+Screenshot of the best model. I've highlighted the RMSE, which is provided under 'view other metrics'. In addition the tags show which models are included in the ensemble.
+![image](screenshots\02_best_model_automl.PNG)
 
 ## Hyperparameter Tuning
-The question for hyperparameter tuning is of course which model to choose. Since I already ran AutoML, it made sense to me to try to improve that result even further with Hyperdrive. Seeing the top results from AutoML, I had no clarity on the contents of the top scoring method the VotingEnsemble, so decided to take the second best model (XGBoost) and try to improve that further with Hyperdrive. I used all the parameters that I've also used in my previous Kaggle submission to define the hyperparameter search space. The ranges where emperically determined by much googling for other ranges used for XGBoost.
+The question for hyperparameter tuning is of course which model to choose. Since I already ran AutoML, it made sense to me to try to improve that result even further with Hyperdrive. Seeing the top results from AutoML, I decided to keep it managable by excluding the VotingEnsemble, but take the second best model (which was XGBoost) and try to improve that further with Hyperdrive. I used all the parameters that I've also used in my previous Kaggle submission to define the hyperparameter search space. The ranges where empirically determined by much googling for other ranges used for XGBoost and are stated in train_models.ipynb.
 After my first run with Hyperdrive, I inspected the parallel plot for the best results and increase the ranges somewhat when the best runs where close to the edges of the search space.
 
 ### Results and comparison with AutoML
@@ -54,13 +60,22 @@ The parameters of the best Hyperdrive model where:
 
 This score could be futher improved by making it into an ensemble with other models, or trying out different scaling options.
 
-*TODO* Remeber to provide screenshots of the `RunDetails` widget as well as a screenshot of the best model trained with it's parameters.
+I've included two screenshots, one of a run with bayesian sampling just starting, one with a run with random sampling being almost finished. The random sampling has more runs, but both runs have certain experiments with a very bad score, which leads to outliers in the graph
+![image](screenshots\01_run_details_bayesian.PNG)
+![image](screenshots\01_run_details_random.PNG)
+Screenshot of the completed run with random sampling. 
+![image](screenshots\03_hyperdrive_bandit_overview.PNG)
+Screenshot of the best model
+![image](screenshots\04_best_run_hyperdrive.PNG)
 
 ## Model Deployment
-The AutoML model had the best score, so that was deployed. It can be queried using a rest endpoint. For this project I've tried out batch inference, to run inference on many houses at once. This feature enabled me to fill in the final test dataset and submit it to Kaggle. The final score of the AutoML model on the private testset was 
+I've registered the best model from AutoML and hyperdrive and deployed the AutoML model.
 
-*TODO*: Give an overview of the deployed model and instructions on how to query the endpoint with a sample input.
+The AutoML model had the best score, so that was deployed (deploy_test_endpoint.ipynb). It can be queried using a the HTTP endpoint. For this project I've tried out batch inference, to run inference on many houses at once. This feature enabled me to fill in the final test dataset and submit it to Kaggle. The final score of the AutoML model on the private testset was 0.1258. The difference with the training score is that this competition has a fairly low amount of datapoints, which could lead to some inadvertent overfitting on the training set.
+
 The model can be queried my loading a dataset with houses into pandas. Of course it needs to have the same columns the model was trained on. This dataset should then be converted into JSON and submitted to the HTTP endpoint. The endpoint converts this json back into a dataframe and submits to the model. The model returns a Numpy array (for all houses 1 prediction). Then, these predictions are converted into a list, converted to json and returned to the sender.
+
+The rubric also stated I should register the best hyperdrive experiment. Unfortunately, during training I used xgb.cv for cross validation, which only returns the score and not the model. Therefore I had to rerun the full experiment where I made sure to save an xbgboost regressor if the score of xbg.cv was good enough. The registering of this model was also done in register_model.ipynb.
 
 ## Screen Recording
 *TODO* Provide a link to a screen recording of the project in action. Remember that the screencast should demonstrate:
