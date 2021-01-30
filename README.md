@@ -49,7 +49,7 @@ After my first run with Hyperdrive, I inspected the parallel plot for the best r
 ### Results and comparison with AutoML
 AutoML on same dataset as hyperdrive	                    0.1167 (best run: VotingEnsemble)
 AutoML on original dataset (except log transform target)	0.1248
-Hyperdrive xgboost with bandit policy	                    0.1259
+Hyperdrive xgboost with bandit policy	                    0.1255 
 Hyperdrive xgboost with bayesian sampling	                0.1270
 AutoML on same dataset as hyperdrive	                    0.1273 (second best run: XGBoost)
 
@@ -75,10 +75,10 @@ The AutoML model had the best score, so that was deployed (deploy_test_endpoint.
 
 The model can be queried my loading a dataset with houses into pandas. Of course it needs to have the same columns the model was trained on. This dataset should then be converted into JSON and submitted to the HTTP endpoint. The endpoint converts this json back into a dataframe and submits to the model. The model returns a Numpy array (for all houses 1 prediction). Then, these predictions are converted into a list, converted to json and returned to the sender.
 
+Screenshot of deployed active endpoint
+![image](05_best_run_active_endpoint.PNG)
+
 The rubric also stated I should register the best hyperdrive experiment. Unfortunately, during training I used xgb.cv for cross validation, which only returns the score and not the model. Therefore I had to rerun the full experiment where I made sure to save an xbgboost regressor if the score of xbg.cv was good enough. The registering of this model was also done in register_model.ipynb.
 
 ## Screen Recording
-*TODO* Provide a link to a screen recording of the project in action. Remember that the screencast should demonstrate:
-- A working model
-- Demo of the deployed  model
-- Demo of a sample request sent to the endpoint and its response
+I've made a screen recording, which is posted here [https://youtu.be/-JEsBgIKx60](https://youtu.be/-JEsBgIKx60)

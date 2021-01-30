@@ -120,8 +120,15 @@ def main():
     res = xgb.cv(param,xgb.DMatrix(train_x, train_y), num_boost_round =200, early_stopping_rounds = 5, nfold=5,seed=112)
 
     os.makedirs('outputs', exist_ok=True)
-    joblib.dump(pipe, 'outputs/preprocess.joblib')
     joblib.dump(param, 'outputs/param.joblib')
+    joblib.dump(res, 'outputs/cv_res.joblib')
+
+    if res.loc[res.index[-1],'test-rmse-mean'] < 0.126:
+        # only retrain and save the best model when a good score is obtained. To save some compute
+        model = xgb.train(param,xgb.DMatrix(train_x, train_y), num_boost_round =200)
+        joblib.dump(pipe, 'outputs/preprocess.joblib')
+        joblib.dump(model, 'outputs/model.joblib')
+    
     run.log("rmse", res.loc[res.index[-1],'test-rmse-mean'])
     run.log("num_runs:", res.shape[0])
 
