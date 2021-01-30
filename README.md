@@ -38,9 +38,9 @@ As denoted, two AutoML runs where executed, with identical settings on two datas
 ### Results
 AutoML scored a RSME of 0.1167 on the engineered dataset and 0.1273 on the raw dataset, both using a voting ensemble. This was more or less expected, since as a rule of thumb an ensemble of models gives a slight improvement in score. It could be further improved by e.g. getting more data, additional feature engineering (although one of the datasets is already pretty much engineered out) and further finetuning the model. An other alternative is to try deep learning, but I noticed Azure doesn't offer that option for regression.
 Screenshot of rundetails widget. It shows that the best model is found at the last run, which is where the ensembling takes place.
-![image](screenshots\01_run_details_automl.PNG)
+![image](screenshots/01_run_details_automl.PNG)
 Screenshot of the best model. I've highlighted the RMSE, which is provided under 'view other metrics'. In addition the tags show which models are included in the ensemble.
-![image](screenshots\02_best_model_automl.PNG)
+![image](screenshots/02_best_model_automl.PNG)
 
 ## Hyperparameter Tuning
 The question for hyperparameter tuning is of course which model to choose. Since I already ran AutoML, it made sense to me to try to improve that result even further with Hyperdrive. Seeing the top results from AutoML, I decided to keep it managable by excluding the VotingEnsemble, but take the second best model (which was XGBoost) and try to improve that further with Hyperdrive. I used all the parameters that I've also used in my previous Kaggle submission to define the hyperparameter search space. The ranges where empirically determined by much googling for other ranges used for XGBoost and are stated in train_models.ipynb.
@@ -61,12 +61,12 @@ The parameters of the best Hyperdrive model where:
 This score could be futher improved by making it into an ensemble with other models, or trying out different scaling options.
 
 I've included two screenshots, one of a run with bayesian sampling just starting, one with a run with random sampling being almost finished. The random sampling has more runs, but both runs have certain experiments with a very bad score, which leads to outliers in the graph
-![image](screenshots\01_run_details_bayesian.PNG)
-![image](screenshots\01_run_details_random.PNG)
+![image](screenshots/01_run_details_bayesian.PNG)
+![image](screenshots/01_run_details_random.PNG)
 Screenshot of the completed run with random sampling. 
-![image](screenshots\03_hyperdrive_bandit_overview.PNG)
+![image](screenshots/03_hyperdrive_bandit_overview.PNG)
 Screenshot of the best model
-![image](screenshots\04_best_run_hyperdrive.PNG)
+![image](screenshots/04_best_run_hyperdrive.PNG)
 
 ## Model Deployment
 I've registered the best model from AutoML and hyperdrive and deployed the AutoML model.
@@ -76,7 +76,7 @@ The AutoML model had the best score, so that was deployed (deploy_test_endpoint.
 The model can be queried my loading a dataset with houses into pandas. Of course it needs to have the same columns the model was trained on. This dataset should then be converted into JSON and submitted to the HTTP endpoint. The endpoint converts this json back into a dataframe and submits to the model. The model returns a Numpy array (for all houses 1 prediction). Then, these predictions are converted into a list, converted to json and returned to the sender.
 
 Screenshot of deployed active endpoint
-![image](05_best_run_active_endpoint.PNG)
+![image](screenshots/05_best_run_active_endpoint.PNG)
 
 The rubric also stated I should register the best hyperdrive experiment. Unfortunately, during training I used xgb.cv for cross validation, which only returns the score and not the model. Therefore I had to rerun the full experiment where I made sure to save an xbgboost regressor if the score of xbg.cv was good enough. The registering of this model was also done in register_model.ipynb.
 
